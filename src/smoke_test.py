@@ -30,10 +30,21 @@ def main():
     except Exception as e:
         # Graceful degradation for restricted region errors on CI
         msg = str(e)
-        if 'restricted location' in msg.lower() or 'service unavailable' in msg.lower():
+        if 'restricted location' in msg.lower() or 'service unavailable' in msg.lower() or '451' in msg:
             logger.error('Binance API bị hạn chế ở môi trường này: %s', e)
-            print('SMOKE TEST (DEGRADED): Không truy cập được Binance Spot từ môi trường CI (hạn chế vùng).')
-            print('Bạn vẫn có thể test logic cục bộ hoặc dùng proxy/alternative data source.')
+            degraded_msg = (
+                'Smoke Test: Không truy cập được Binance Spot từ môi trường CI (hạn chế vùng).\n'
+                'Bạn vẫn có thể test logic cục bộ hoặc dùng proxy/alternative data source.'
+            )
+            if args.to_telegram:
+                try:
+                    bot = TelegramBot(parse_mode=args.parse_mode)
+                    bot.send_message(degraded_msg)
+                except Exception as te:
+                    logger.error('Gửi Telegram (degraded) thất bại: %s', te)
+                    print(degraded_msg)
+            else:
+                print(degraded_msg)
             return
         raise
     df = fetcher.to_dataframe(raw)
