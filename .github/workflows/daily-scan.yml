@@ -35,6 +35,6 @@ jobs:
           echo "TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}" >> $GITHUB_ENV
           echo "TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID}" >> $GITHUB_ENV
 
-      - name: Run scan and send to Telegram
+      - name: Run scan and send to Telegram (with fail notification)
         run: |
-          python -m src.scan_abw_volume --top 50 --abw-lt 1.0 --vol-mult 10 --to-telegram
+          python -m src.scan_abw_volume --top 50 --abw-lt 1.0 --vol-mult 10 --to-telegram --notify-on-fail
