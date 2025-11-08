@@ -1,0 +1,40 @@
+name: Daily ABW Scan
+
+on:
+  schedule:
+    # Chạy mỗi ngày lúc 06:45 UTC+7 -> đổi giờ theo timezone mong muốn.
+    # GitHub Actions dùng UTC, nên 06:45 VN là 23:45 ngày trước theo UTC.
+    - cron: '45 23 * * *'
+  workflow_dispatch: {}
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Set env secrets
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          echo "TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}" >> $GITHUB_ENV
+          echo "TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID}" >> $GITHUB_ENV
+
+      - name: Run scan and send to Telegram
+        run: |
+          python -m src.scan_abw_volume --top 50 --abw-lt 1.0 --vol-mult 10 --to-telegram

@@ -1,0 +1,51 @@
+# Copy to config.yaml and fill in real values or use environment variables
+telegram:
+  bot_token: "YOUR_TELEGRAM_BOT_TOKEN"
+  chat_id: "YOUR_CHAT_ID"
+  parse_mode: "Markdown"
+
+binance:
+  symbols: ["BTCUSDT", "ETHUSDT"]
+  interval: "1h"  # e.g. 1m,5m,15m,1h,4h,1d
+  max_history_days: 30
+
+indicators:
+  rsi:
+    period: 14
+    overbought: 70
+    oversold: 30
+  ema:
+    fast: 12
+    slow: 26
+  macd:
+    fast: 12
+    slow: 26
+    signal: 9
+
+custom_signals:
+  abw_volume_spike:
+    enabled: true
+    weekly_interval: "1w"
+    daily_interval: "1d"
+    bb_length: 20
+    bb_mult: 2.0
+    abw_lt: 1.0             # trigger if AB_W < this threshold
+    volume_ma_length: 20
+    volume_multiplier: 10.0 # trigger if daily volume > multiplier * MA(volume)
+
+scheduler:
+  report_cron: "0 */1 * * *"   # top of every hour
+  check_interval_seconds: 60   # evaluate signals every 60s
+  scan_time: "06:45"           # chạy quét hằng ngày (HH:MM, 24h). Dùng với schedule_scan.py
+
+report:
+  decimals: 2
+  include_macd: true
+  include_rsi: true
+  include_ema: true
+
+# Optional testing helpers to speed up local runs
+testing:
+  quick_mode: false        # when true, may skip heavy indicators (e.g., MACD)
+  fetch_limit: 120         # number of recent candles to fetch per symbol
+  oneshot: false           # send a single report then exit

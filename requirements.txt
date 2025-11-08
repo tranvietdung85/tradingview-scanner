@@ -1,0 +1,7 @@
+binance-connector
+pandas
+numpy
+requests
+APScheduler
+python-dotenv
+PyYAML
