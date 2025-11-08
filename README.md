@@ -101,6 +101,10 @@ Bạn có thể chỉnh tham số trong file YAML này theo nhu cầu.
 Lưu ý:
 - GitHub Actions dùng UTC, cần quy đổi từ giờ địa phương sang UTC.
 - Đảm bảo không vượt rate limit khi tăng `--top` quá lớn.
+- Nếu gặp thông báo "restricted location / 451": dùng proxy hoặc mirror. Bạn có thể đặt biến môi trường secrets:
+	- `PROXY_URL` (ví dụ: `http://user:pass@host:port`)
+	- `BINANCE_BASE_URL` nếu muốn thử endpoint khác (ví dụ cổng phụ / region khác).
+	Sau đó workflow sẽ tự đọc và cấu hình client.
 
 ## License
 MIT (tuỳ chọn thêm nếu cần)

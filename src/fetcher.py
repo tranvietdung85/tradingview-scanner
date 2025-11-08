@@ -3,12 +3,21 @@ from binance.spot import Spot
 import time
 import logging
 from typing import List, Dict, Any
+import os
 
 logger = logging.getLogger(__name__)
 
 class BinanceFetcher:
     def __init__(self, symbols: List[str], interval: str):
-        self.client = Spot()
+        # Optional: allow proxy and base_url override via environment variables for CI/regions
+        base_url = os.getenv('BINANCE_BASE_URL') or None
+        proxy = os.getenv('HTTPS_PROXY') or os.getenv('https_proxy') or os.getenv('HTTP_PROXY') or os.getenv('http_proxy') or os.getenv('PROXY_URL')
+        proxies = {'http': proxy, 'https': proxy} if proxy else None
+        try:
+            self.client = Spot(base_url=base_url, proxies=proxies)
+        except TypeError:
+            # Older versions may not support proxies kwarg; fallback
+            self.client = Spot(base_url=base_url)
         self.symbols = symbols
         self.interval = interval
 
