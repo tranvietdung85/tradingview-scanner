@@ -117,6 +117,7 @@ def main():
     parser.add_argument('--verbose', action='store_true', help='Show per-symbol diagnostics (AB_W, volume, MA)')
     parser.add_argument('--to-telegram', action='store_true', help='Gửi kết quả (hoặc thông báo không có mã) lên Telegram')
     parser.add_argument('--dry-run-telegram', action='store_true', help='Không gửi thật, chỉ in nội dung sẽ gửi')
+    parser.add_argument('--notify-on-fail', action='store_true', help='Nếu lỗi (ví dụ API bị chặn), gửi thông báo thất bại lên Telegram thay vì crash')
     args = parser.parse_args()
 
     if args.verbose:
@@ -132,15 +133,25 @@ def main():
     weekly_len = int(cs.get('bb_length', args.bb_len))
     weekly_mult = float(cs.get('bb_mult', args.bb_mult))
 
-    matches = scan(
-        top_n=args.top,
-        abw_lt=abw_lt,
-        vol_ma_len=vol_ma_len,
-        vol_mult=vol_mult,
-        weekly_len=weekly_len,
-        weekly_mult=weekly_mult,
-        sleep_s=args.sleep,
-    )
+    try:
+        matches = scan(
+            top_n=args.top,
+            abw_lt=abw_lt,
+            vol_ma_len=vol_ma_len,
+            vol_mult=vol_mult,
+            weekly_len=weekly_len,
+            weekly_mult=weekly_mult,
+            sleep_s=args.sleep,
+        )
+    except Exception as e:
+        logger.exception("Scan failed: %s", e)
+        if args.to_telegram and args.notify_on_fail:
+            tg_cfg = (cfg.get('telegram') or {})
+            bot = TelegramBot(tg_cfg.get('bot_token'), tg_cfg.get('chat_id'), tg_cfg.get('parse_mode','Markdown'))
+            bot.send_message(f"Scan thất bại: {str(e)}\nCó thể do hạn chế vùng địa lý của API khi chạy trên môi trường CI.")
+            logger.info("Đã gửi thông báo lỗi lên Telegram.")
+            return
+        raise
 
     if not matches:
         logger.info("No matches found with current thresholds.")
