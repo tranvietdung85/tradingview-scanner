@@ -79,18 +79,19 @@ def scan(top_n: int, abw_lt: float, vol_ma_len: int, vol_mult: float, weekly_len
 
 
 def format_matches_markdown(matches: List[Dict], top_n: int, abw_lt: float, vol_ma_len: int, vol_mult: float) -> str:
+    abw_label = "AB\\_W"  # escape underscore for Telegram Markdown
     if not matches:
-        return (f"*Kết quả quét AB_W + Volume*\n"
-                f"Không có mã nào thỏa điều kiện (AB_W < {abw_lt}, Volume > {vol_mult}x MA{vol_ma_len})\n"
+        return (f"Kết quả quét {abw_label} + Volume\n"
+                f"Không có mã nào thỏa điều kiện ({abw_label} < {abw_lt}, Volume > {vol_mult}x MA{vol_ma_len})\n"
                 f"Top {top_n} cặp USDT.")
     # Sort
     matches = sorted(matches, key=lambda x: x['ab_w'])
     lines = [
-        "*Kết quả quét AB_W + Volume*",
-        f"Điều kiện: AB_W < {abw_lt}, Vol > {vol_mult}x MA{vol_ma_len}",
+        f"Kết quả quét {abw_label} + Volume",
+        f"Điều kiện: {abw_label} < {abw_lt}, Vol > {vol_mult}x MA{vol_ma_len}",
         f"Top {top_n} cặp USDT theo khối lượng 24h",
         "",
-        "Symbol | AB_W | Vol / MA (x)"
+        f"Symbol | {abw_label} | Vol / MA (x)"
     ]
     for m in matches:
         vol = m['vol']
