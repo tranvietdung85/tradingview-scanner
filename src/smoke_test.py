@@ -24,6 +24,7 @@ def main():
     parser.add_argument('--parse-mode', default='Markdown')
     args = parser.parse_args()
 
+    # If running in CI with restricted region, allow graceful fallback with degraded notice
     fetcher = BinanceFetcher([args.symbol], args.interval)
     try:
         raw = fetcher.get_klines(args.symbol, args.interval, limit=args.limit)

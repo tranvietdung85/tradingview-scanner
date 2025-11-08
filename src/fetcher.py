@@ -10,14 +10,20 @@ logger = logging.getLogger(__name__)
 class BinanceFetcher:
     def __init__(self, symbols: List[str], interval: str):
         # Optional: allow proxy and base_url override via environment variables for CI/regions
-        base_url = os.getenv('BINANCE_BASE_URL') or None
+        base_url = os.getenv('BINANCE_BASE_URL')
         proxy = os.getenv('HTTPS_PROXY') or os.getenv('https_proxy') or os.getenv('HTTP_PROXY') or os.getenv('http_proxy') or os.getenv('PROXY_URL')
         proxies = {'http': proxy, 'https': proxy} if proxy else None
+        kwargs = {}
+        if base_url:
+            kwargs['base_url'] = base_url
         try:
-            self.client = Spot(base_url=base_url, proxies=proxies)
+            if proxies:
+                kwargs['proxies'] = proxies
+            self.client = Spot(**kwargs)
         except TypeError:
-            # Older versions may not support proxies kwarg; fallback
-            self.client = Spot(base_url=base_url)
+            # Some versions may not support 'proxies'; retry without it
+            kwargs.pop('proxies', None)
+            self.client = Spot(**kwargs)
         self.symbols = symbols
         self.interval = interval
 
