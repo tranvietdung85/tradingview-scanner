@@ -52,6 +52,22 @@ jobs:
           echo "TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}" >> $GITHUB_ENV
           echo "TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID}" >> $GITHUB_ENV
 
+      - name: Export proxy/base_url (optional)
+        env:
+          PROXY_URL: ${{ secrets.PROXY_URL }}
+          BINANCE_BASE_URL: ${{ secrets.BINANCE_BASE_URL }}
+        run: |
+          if [ -n "${PROXY_URL}" ]; then
+            echo "PROXY_URL=${PROXY_URL}" >> $GITHUB_ENV
+            echo "HTTPS_PROXY=${PROXY_URL}" >> $GITHUB_ENV
+            echo "https_proxy=${PROXY_URL}" >> $GITHUB_ENV
+            echo "HTTP_PROXY=${PROXY_URL}" >> $GITHUB_ENV
+            echo "http_proxy=${PROXY_URL}" >> $GITHUB_ENV
+          fi
+          if [ -n "${BINANCE_BASE_URL}" ]; then
+            echo "BINANCE_BASE_URL=${BINANCE_BASE_URL}" >> $GITHUB_ENV
+          fi
+
       - name: Run smoke test
         run: |
           ARGS="--symbol ${{ github.event.inputs.symbol }} --interval ${{ github.event.inputs.interval }} --limit ${{ github.event.inputs.limit }}"

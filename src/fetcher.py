@@ -148,6 +148,8 @@ class BinanceFetcher:
         yf_interval = interval
         if interval == '1w':
             yf_interval = '1wk'
+        if interval == '1h':
+            yf_interval = '60m'
         # yfinance requires a period; pick a reasonable period to cover 'limit' bars
         period = self._infer_yf_period(yf_interval, limit)
         try:
