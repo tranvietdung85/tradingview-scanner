@@ -75,6 +75,16 @@ class TelegramBot:
         return None, None
 
     def send_message(self, text: str, disable_web_page_preview: bool = True):
+        # Basic escape for Markdown (not MarkdownV2) to avoid 'can't parse entities'
+        if self.parse_mode == 'Markdown':
+            # Escape underscores not inside code spans.
+            def _escape(md: str) -> str:
+                # Naive split on backticks to keep code blocks intact
+                parts = md.split('`')
+                for i in range(0, len(parts), 2):  # even indices are outside code spans
+                    parts[i] = parts[i].replace('_', '\\_')
+                return '`'.join(parts)
+            text = _escape(text)
         if self.dry_run:
             logger.info("[DRY-RUN] Telegram message:\n%s", text)
             return {"ok": True, "dry_run": True}

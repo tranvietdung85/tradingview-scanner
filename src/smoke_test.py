@@ -26,31 +26,34 @@ def main():
 
     # If running in CI with restricted region, allow graceful fallback with degraded notice
     fetcher = BinanceFetcher([args.symbol], args.interval)
+    raw = None
     try:
         raw = fetcher.get_klines(args.symbol, args.interval, limit=args.limit)
     except Exception as e:
-        # Graceful degradation for restricted region errors on CI
-        msg = str(e)
-        if 'restricted location' in msg.lower() or 'service unavailable' in msg.lower() or '451' in msg:
-            logger.error('Binance API bị hạn chế ở môi trường này: %s', e)
-            degraded_msg = (
-                'Smoke Test: Không truy cập được Binance Spot từ môi trường CI (hạn chế vùng).\n'
-                'Bạn vẫn có thể test logic cục bộ hoặc dùng proxy/alternative data source.'
-            )
-            if args.to_telegram:
-                try:
-                    bot = TelegramBot(parse_mode=args.parse_mode)
-                    bot.send_message(degraded_msg)
-                except Exception as te:
-                    logger.error('Gửi Telegram (degraded) thất bại: %s', te)
-                    print(degraded_msg)
-            else:
+        logger.exception('Lỗi lấy klines (không có fallback nào thành công): %s', e)
+        degraded_msg = 'Smoke Test: Hoàn toàn không lấy được dữ liệu (Binance + mirrors + yfinance đều thất bại).'
+        if args.to_telegram:
+            try:
+                bot = TelegramBot(parse_mode=args.parse_mode)
+                bot.send_message(degraded_msg)
+            except Exception:
                 print(degraded_msg)
-            return
-        raise
+        else:
+            print(degraded_msg)
+        return
+
+    source = fetcher.last_source or 'unknown'
+    if source != 'binance_client':
+        logger.warning('Dữ liệu dùng nguồn dự phòng: %s', source)
+        if args.to_telegram:
+            try:
+                bot = TelegramBot(parse_mode=args.parse_mode)
+                bot.send_message(f"[Cảnh báo] Dữ liệu lấy từ nguồn dự phòng: {source}")
+            except Exception:
+                pass
     df = fetcher.to_dataframe(raw)
     if df.empty:
-        raise RuntimeError('No data fetched; check symbol/interval or network.')
+        raise RuntimeError('No data fetched after fallback chain; kiểm tra symbol/interval hoặc mạng.')
 
     config = {
         'include_ema': True,
@@ -67,7 +70,8 @@ def main():
     if args.include_abw:
         try:
             ab_w = compute_weekly_ab(fetcher, args.symbol, '1w', 20, 2.0, limit=60)
-            signals['abw'] = f"AB_W={ab_w:.2f} (weekly, len=20, mult=2.0)"
+            # Escape underscore for Telegram Markdown
+            signals['abw'] = f"AB\\_W={ab_w:.2f} (weekly, len=20, mult=2.0)"
         except Exception as e:
             logger.exception('AB_W compute failed: %s', e)
 

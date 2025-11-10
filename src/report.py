@@ -4,7 +4,9 @@ import pandas as pd
 def build_report(symbol: str, df: pd.DataFrame, signals: Dict[str, Any], decimals: int = 2) -> str:
     last = df.iloc[-1]
     price = last['close']
-    lines = [f"*Report:* `{symbol}`", f"Last Close: `{price:.{decimals}f}`"]
+    # Sanitize symbol (avoid unclosed markdown entities if symbol contains special chars)
+    safe_symbol = symbol.replace('_', '\\_')
+    lines = [f"*Report:* `{safe_symbol}`", f"Last Close: `{price:.{decimals}f}`"]
     if 'rsi' in last:
         lines.append(f"RSI: `{last['rsi']:.2f}`")
     if 'ema_fast' in last and 'ema_slow' in last:

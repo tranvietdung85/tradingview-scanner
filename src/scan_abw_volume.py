@@ -3,7 +3,7 @@ import logging
 import math
 import argparse
 from typing import List, Dict
-from binance.spot import Spot
+# from binance.spot import Spot  # replaced by resilient fetcher usage
 import pandas as pd
 
 from src.fetcher import BinanceFetcher
@@ -24,8 +24,10 @@ def load_config(path: str = 'config.yaml') -> Dict:
     return {}
 
 
-def list_top_usdt_symbols(client: Spot, top_n: int = 50) -> List[str]:
-    tickers = client.ticker_24hr()  # list for all symbols
+def list_top_usdt_symbols(fetcher: BinanceFetcher, top_n: int = 50) -> List[str]:
+    tickers = fetcher.fetch_ticker_24hr() or []  # may be None -> []
+    if not tickers:
+        raise RuntimeError('Không lấy được danh sách 24h tickers từ Binance (client+HTTP).')
     pairs = []
     for t in tickers:
         sym = t.get('symbol')
@@ -53,10 +55,8 @@ def daily_volume_stats(fetcher: BinanceFetcher, symbol: str, ma_len: int = 20) -
     return {"latest": float(vol_latest), "ma": float(vol_ma)}
 
 
-def scan(top_n: int, abw_lt: float, vol_ma_len: int, vol_mult: float, weekly_len: int, weekly_mult: float, sleep_s: float):
-    client = Spot()
-    fetcher = BinanceFetcher([], '1d')
-    symbols = list_top_usdt_symbols(client, top_n=top_n)
+def scan(fetcher: BinanceFetcher, top_n: int, abw_lt: float, vol_ma_len: int, vol_mult: float, weekly_len: int, weekly_mult: float, sleep_s: float):
+    symbols = list_top_usdt_symbols(fetcher, top_n=top_n)
     logger.info("Scanning %d symbols: %s", len(symbols), ', '.join(symbols[:10]) + ('...' if len(symbols) > 10 else ''))
 
     matches = []
@@ -134,7 +134,9 @@ def main():
     weekly_mult = float(cs.get('bb_mult', args.bb_mult))
 
     try:
+        fetcher = BinanceFetcher([], '1d')
         matches = scan(
+            fetcher=fetcher,
             top_n=args.top,
             abw_lt=abw_lt,
             vol_ma_len=vol_ma_len,
@@ -162,6 +164,10 @@ def main():
 
     if args.to_telegram:
         text = format_matches_markdown(matches, args.top, abw_lt, vol_ma_len, vol_mult)
+        # append fallback source if not primary
+        fetch_source = getattr(fetcher, 'last_source', 'unknown')
+        if fetch_source != 'binance_client':
+            text += f"\n(Nguồn dữ liệu: {fetch_source})"
         if args.dry_run_telegram:
             print("----- MESSAGE PREVIEW (dry-run) -----")
             print(text)

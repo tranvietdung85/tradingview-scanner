@@ -106,5 +106,15 @@ Lưu ý:
 	- `BINANCE_BASE_URL` nếu muốn thử endpoint khác (ví dụ cổng phụ / region khác).
 	Sau đó workflow sẽ tự đọc và cấu hình client.
 
+### Fallback dữ liệu khi Binance bị chặn (451)
+Fetcher đã có chuỗi dự phòng tự động:
+1) Binance official client (binance-connector)
+2) REST qua các mirror (`https://api1.binance.com`, `https://api3.binance.com`, `https://api-gcp.binance.com`) – tôn trọng `PROXY_URL`
+3) yfinance (map `BTCUSDT` → `BTC-USD`) cho các khung cơ bản (`1h`, `1d`, `1w`), đủ để tính AB_W và Volume MA hằng ngày
+
+Lưu ý khi dùng yfinance:
+- Không phải mọi cặp USDT trên Binance đều có mã `-USD` trên Yahoo Finance.
+- Dữ liệu có thể có sai khác nhẹ do nhà cung cấp khác nhau; chỉ nên dùng như chế độ dự phòng trên CI.
+
 ## License
 MIT (tuỳ chọn thêm nếu cần)
